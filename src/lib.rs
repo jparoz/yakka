@@ -7,6 +7,28 @@ use serde::de::{Visitor, SeqAccess, Error};
 
 use std::fmt;
 
+#[macro_export]
+macro_rules! entry {
+    ($text:expr) => {
+        Entry {
+            text: $text.to_string(),
+            children: Vec::new(),
+        }
+    };
+    ($text:expr, [$($child:expr),+]) => {
+        {
+            let mut e = Entry {
+                text: $text.to_string(),
+                children: Vec::new(),
+            };
+            $(
+                e.children.push(entry!($child));
+            )+
+            e
+        }
+    };
+}
+
 #[derive(Debug)]
 pub struct Entry {
     pub text: String,

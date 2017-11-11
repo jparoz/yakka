@@ -6,3 +6,4 @@ authors = ["Jesse Paroz <jesse.paroz@gmail.com>"]
 [dependencies]
 serde = "1.0"
 serde_json = "1.0"
+cursive = "0.7"
