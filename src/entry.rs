@@ -1,18 +1,18 @@
-extern crate serde;
-extern crate serde_json;
-
 use serde::{Serialize, Serializer, Deserialize, Deserializer};
 use serde::ser::SerializeTuple;
 use serde::de::{Visitor, SeqAccess, Error};
 
 use std::fmt;
 
-#[macro_export]
+use super::SETTINGS;
+
+#[macro_use]
 macro_rules! entry {
     ($text:expr) => {
         Entry {
             text: $text.to_string(),
             children: Vec::new(),
+            complete: false,
         }
     };
     ($text:expr, [$($child:expr),+]) => {
@@ -20,6 +20,7 @@ macro_rules! entry {
             let mut e = Entry {
                 text: $text.to_string(),
                 children: Vec::new(),
+                complete: false,
             };
             $(
                 e.children.push(entry!($child));
@@ -33,6 +34,42 @@ macro_rules! entry {
 pub struct Entry {
     pub text: String,
     pub children: Vec<Entry>,
+    pub complete: bool,
+}
+
+impl Entry {
+    fn fmt_at_depth(&self, f: &mut fmt::Formatter, depth: usize) -> fmt::Result {
+        write!(f, "{}", "  ".repeat(depth))?;
+        write!(f, "{} ", SETTINGS.complete_char(self.complete))?;
+
+        let pad = (depth * 2) + 2;
+        let spaces = " ".repeat(pad);
+        let len = self.text.len();
+        let width = len.min(SETTINGS.width - pad);
+
+        // @StepBy
+        let mut i = 0;
+        loop {
+            let rem = len - i;
+            writeln!(f, "{}", &self.text[i..i + rem.min(width)])?;
+            i += width;
+            if i >= len {
+                break;
+            }
+            write!(f, "{}", spaces)?;
+        }
+
+        for child in self.children.iter() {
+            child.fmt_at_depth(f, depth + 1)?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Display for Entry {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.fmt_at_depth(f, 0)
+    }
 }
 
 impl Serialize for Entry {
@@ -83,6 +120,7 @@ impl<'de> Visitor<'de> for EntryVisitor {
         Ok(Entry {
             text: text,
             children: children,
+            complete: false,
         })
     }
 }
