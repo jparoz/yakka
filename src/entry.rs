@@ -28,7 +28,7 @@ macro_rules! entry {
     };
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Entry {
     pub text: String,
     pub children: Vec<Entry>,
